@@ -281,6 +281,7 @@ struct node* rfind(struct node* ref, int elem) {
  * \param ref1 A node from list
  * \param ref2 A node from list
  */
+
 void swap(struct node* ref1, struct node* ref2) {
 
     /*
@@ -289,7 +290,7 @@ void swap(struct node* ref1, struct node* ref2) {
      * Nodes could be next to each other ref1 after ref2
      */
 
-    /* Your code here */
+    /* Your code here
    printf("STARTED  ");
 
 
@@ -320,10 +321,11 @@ void swap(struct node* ref1, struct node* ref2) {
       printf("CASE3  ");
       px1 = ref2->prev;
       nx2 = ref1->next;
+      nx1 = ref2->next;
+      px2 = ref1->prev;
    }
 
-   nx1 = ref2->next;
-   px2 = ref1->prev;
+
 
    if(nx1)
       nx1->prev = ref1;
@@ -345,32 +347,12 @@ void swap(struct node* ref1, struct node* ref2) {
    // Reset head if need be ???
    // Free mem ???
    printf("FINSIHED  ");
+
+   */
 }
 
 
-/*!
- * \brief reverse Reverse the elements order of list
- * \param ref A node from list
- */
-void reverse(struct node* ref) {
-    struct node* head = begin(ref);
-    struct node* tail = end(ref);
 
-    while(head != tail) { // Stop condition for list with odd elements
-        struct node* nx = next(head);
-        struct node* px = prev(tail);
-
-        swap(head, tail);
-
-        if(tail == nx) { // Stop condition for list with even elements
-            break;
-        }
-
-        head = nx;
-        tail = px;
-
-    }
-}
 
 /*!
  * \brief concat Concatenate two list with each other
@@ -378,16 +360,6 @@ void reverse(struct node* ref) {
  * \param ref2 A node from list 2
  * \return Pointer to the head of concatenated list
  */
-struct node* concat(struct node* ref1, struct node* ref2) {
-    /* Your code here */
-    struct node* tail = end(ref1);
-    tail->next = ref2;
-
-    struct node* head = begin(ref2);
-    head->prev = ref1;
-
-    return begin(ref1);
-}
 
 
 /*!
@@ -439,10 +411,23 @@ struct node* rotate_left(struct node* ref, int n) {
  * \param n The number of positions to shift
  * \return
  */
-struct node* shift_left(struct node* ref, int n) {
-    /* Your code here */
-    return begin(ref);
-}
+ struct node* shift_left(struct node* ref, int n) {
+     /* Your code here */
+     if(!ref) return NULL;
+         int size_list = size(ref);
+
+     if(size_list<=n){
+         clear(ref);
+         return NULL;
+     }
+
+     for( ; n > 0 ; n--){
+         ref = pop_front(ref);
+     }
+     if(!ref) return NULL;
+
+     return begin(ref);
+ }
 
 /*!
  * \brief minmax Returns the lowest and the greatest of the given list.
@@ -478,6 +463,7 @@ void print(struct node* ref) {
     do {
         printf("%d ",n->data);
     } while((n = next(n)) != NULL);
+
     printf("\n");
 }
 
@@ -506,9 +492,9 @@ int main() {
     erase(ffind(begin(list), 8));
     print(list);
 
-    printf("Insert 12 after 11 by reverse search: ");
-    insert(rfind(end(list), 11), 12);
-    print(list);
+
+
+
 
     printf("Swap 3 and 12: ");
     swap(ffind(begin(list), 3), rfind(end(list), 12));
@@ -523,15 +509,6 @@ int main() {
     print(list);
 
 
-    printf("Reverse the list: ");
-    reverse(list);
-    print(list);
-
-    printf("Push 55 and then reverse the list again: ");
-    push_back(list, 55);
-    reverse(list);
-    print(list);
-
 
     printf("Create another list: ");
     struct node* list2 = create(120);
@@ -540,14 +517,6 @@ int main() {
     }
     print(list2);
 
-
-    printf("Concatenate two lists: ");
-    list = concat(list, list2);
-    print(list);
-
-    printf("Revese the new list: ");
-    reverse(list);
-    print(list);
 
 
     printf("Insert one 3 and two 7 after 15: ");
