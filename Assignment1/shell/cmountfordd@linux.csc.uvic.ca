@@ -15,40 +15,22 @@
    Function Declarations for builtin shell commands:
  */
 int cd(char **args);
-int pwd(char **args);
 int help(char **args);
 int exitShell(char **args);
-int set(char **args);
-int unset(char **args);
 
 /*
    List of builtin commands, followed by their corresponding functions.
  */
 char *builtinStr[] = {
         "cd",
-        "pwd",
         "help",
-        "exit",
-        "set var",
-        "unset var"
-};
-
-char *builtinDesc[] = {
-        "Usage: cd [dir]\nChange SEEsh working directory to dir or HOME if no dir is given\n",
-        "Usage: pwd\nPrint full filename of the current working directory\n",
-        "Usage: help\nDisplay information about builtin commands\n",
-        "Usage: exit\tor\tCtrl+D\nSEEsh will exit\n",
-        "Usage: set var [value]\nIf an envirnment variable with name var does not already exist, it will be created with value given.\nIf no value is given, it will be set to the empty string\nIf both var and value are not given, all environment variables and their values will be displayed\n",
-        "Usage: unset var\nSEEsh will destroy environment variable specified\n"
+        "exit"
 };
 
 int (*builtinFunc[]) (char **) = {
         &cd,
-        &pwd,
         &help,
-        &exitShell,
-        &set,
-        &unset
+        &exitShell
 };
 
 int numBuiltins() {
@@ -76,11 +58,6 @@ int cd(char **args)
         return 1;
 }
 
-int pwd(char **args)
-{
-        return 1;
-}
-
 /**
    @brief Builtin command: print help.
    @param args List of args.  Not examined.
@@ -89,17 +66,15 @@ int pwd(char **args)
 int help(char **args)
 {
         int i;
-        printf("\n***********************************************************\n");
         printf("SEEshell adapted from Stephen Brennan's LSH\n");
         printf("Type program names and arguments, and hit enter.\n");
         printf("The following are built in:\n");
 
         for (i = 0; i < numBuiltins(); i++) {
-                printf("  %s - %s\n", builtinStr[i], builtinDesc[i]);
+                printf("  %s\n", builtinStr[i]);
         }
 
         printf("Use the man command for information on other programs.\n");
-        printf("***********************************************************\n\n");
         return 1;
 }
 
@@ -110,19 +85,7 @@ int help(char **args)
  */
 int exitShell(char **args)
 {
-      exit(0);
-}
-
-int set(char **args)
-{
-
-        return 1;
-}
-
-int unset(char **args)
-{
-
-        return 1;
+        return 0;
 }
 
 /**
@@ -189,7 +152,6 @@ char *readLine(void)
         char *line = NULL;
         ssize_t bufferSize = 0;
         getline(&line, &bufferSize, stdin);
-        getline(&line, &bufferSize, stdin);
         return line;
 }
 
@@ -242,18 +204,12 @@ void loop(void)
         char *line;
         char **args;
         int status;
-        int x = 0;
 
         do {
                 printf("? ");
                 line = readLine();
                 args = splitLine(line);
                 status = execute(args);
-
-                if(x == EOF) {
-                  printf("^D\n");
-                  exit(0);
-                 }
 
                 free(line);
                 free(args);
