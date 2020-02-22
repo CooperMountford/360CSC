@@ -9,6 +9,9 @@
 
 #include "util.h"
 
+#include <stdbool.h>
+#include <string.h>
+
 // This is an upper limit on the number of tasks we can create.
 #define MAX_TASKS 128
 
@@ -26,15 +29,29 @@ typedef struct task_info {
 //
 // TODO: Add fields here so you can:
 //   a. Keep track of this task's state.
-//   b. If the task is sleeping, when should it wake up?
-//   c. If the task is waiting for another task, which task is it waiting for?
-//   d. Was the task blocked waiting for user input? Once you successfully
-//      read input, you will need to save it here so it can be returned.
+			//int *state = task_create();
+//  		 b. If the task is sleeping, when should it wake up?
+
+//   		c. If the task is waiting for another task, which task is it waiting for?
+
+//   		d. Was the task blocked waiting for user input? Once you successfully
+//   	   read input, you will need to save it here so it can be returned.
+	//char *readchar = task_readchar();
+
 } task_info_t;
 
 int current_task = 0; //< The handle of the currently-executing task
 int num_tasks = 1;    //< The number of tasks created so far
+
+#define STATE_NEW        0
+#define STATE_READY      1
+#define STATE_WAITING    2
+#define STATE_INACTIVE   3
+#define STATE_TERMINATED 4
+
 task_info_t tasks[MAX_TASKS]; //< Information for every task
+int task_state; //
+int default_wait_time;
 
 /**
  * Initialize the scheduler. Programs should call this before calling any other
@@ -42,6 +59,36 @@ task_info_t tasks[MAX_TASKS]; //< Information for every task
  */
 void scheduler_init() {
 		  // TODO: Initialize the state of the scheduler
+		  memset(tasks, 0, sizeof(tasks));
+
+}
+
+ucontext_t main_context;
+//main_context.uc_stack.ss_sp = malloc(STACK_SIZE);
+//main_context.uc_stack.ss_size = STACK_SIZE;
+
+bool from_main = true;
+
+
+/**
+	* This function should loop over "tasks" array and find the next eligible task.
+	*
+	* In all of our test cases scheduling starts after a task_wait() - so task_wait
+	* is what calls the scheduler initially (round-robin after), but you should write
+	* a generic scheduler that can (and will) be invoked by other blocking functions
+	* as well (task_sleep and task_readchar).
+*/
+void scheduler(task_t handle) {
+
+			if(from_main) {
+						swapcontext(&main_context, &tasks[current_task].context); // Swaps from main context to current task
+
+						//from_main = false;
+			}
+			else {
+						swapcontext(&main_context, &tasks[current_task].context); // Swaps from current task back to main context
+						//from_main = true;
+			}
 
 }
 
@@ -68,7 +115,7 @@ void task_create(task_t* handle, task_fn_t fn) {
 
 		  // Set the task handle to this index, since task_t is just an int
 		  *handle = index;
-        
+
 		  // We're going to make two contexts: one to run the task, and one that runs at the end of the task so we can clean up. Start with the second
 
 		  // First, duplicate the current context as a starting point
@@ -106,7 +153,7 @@ void task_wait(task_t handle) {
 
 		  // HINTNTNTNNTN
 		  // If you are switching to a task that is the same as the current task,
-		  // just returnfrom the scheduler instead of calling swapcontext().
+		  // just return from the scheduler instead of calling swapcontext().
 }
 
 /**
