@@ -29,8 +29,8 @@ char *builtinStr[] = {
         "pwd",
         "help",
         "exit",
-        "set var",
-        "unset var"
+        "set",
+        "unset"
 };
 
 char *builtinDesc[] = {
@@ -78,6 +78,8 @@ int cd(char **args)
 
 int pwd(char **args)
 {
+        char cwd[512];
+        printf("\t%s\n", getcwd(cwd, sizeof(cwd)));
         return 1;
 }
 
@@ -110,20 +112,36 @@ int help(char **args)
  */
 int exitShell(char **args)
 {
-      exit(0);
+        exit(0);
 }
 
 int set(char **args)
 {
+        int env = 0;
+        if(env == 0) {
+                if(args[2] == NULL) {
+                        env = setenv(args[1], " ", 1);
+                }
+                if(args[1] == NULL && args[2] == NULL) {
+                        printf("Env Vars: ");
 
+                }
+                else {
+                        env = setenv(args[2], args[2], 1);
+                }
+        }
         return 1;
 }
 
 int unset(char **args)
 {
-
+        int env = unsetenv(args[1]);
+        if(env == 0)
+         return 1;
         return 1;
 }
+
+
 
 /**
    @brief Launch a program and wait for it to terminate.
@@ -132,8 +150,7 @@ int unset(char **args)
  */
 int launch(char **args)
 {
-        pid_t pid, wpid;
-        int status;
+        pid_t pid;
 
         pid = fork();
         if (pid == 0) {
@@ -146,12 +163,6 @@ int launch(char **args)
         } else if (pid < 0) {
                 // Error forking
                 perror("SEEsh");
-
-        } else {
-                // Parent process
-                do {
-                        wpid = waitpid(pid, &status, WUNTRACED);
-                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
         }
 
         return 1;
@@ -187,8 +198,7 @@ int execute(char **args)
 char *readLine(void)
 {
         char *line = NULL;
-        ssize_t bufferSize = 0;
-        getline(&line, &bufferSize, stdin);
+        size_t bufferSize = 0;
         getline(&line, &bufferSize, stdin);
         return line;
 }
@@ -234,6 +244,22 @@ char **splitLine(char *line)
         return tokens;
 }
 
+
+void rcopen(char* name) {
+        FILE *rcfile;
+        char file[512];
+        char line[512];
+        char *home = getcwd(file, sizeof(file));
+        strcat(home, name);
+
+        rcfile = fopen(file, "r");
+        while(fgets(line, sizeof(line), rcfile)) {
+                execute(splitLine(line));
+        }
+
+        fclose(rcfile);
+}
+
 /**
    @brief Loop getting input and executing it.
  */
@@ -242,18 +268,19 @@ void loop(void)
         char *line;
         char **args;
         int status;
-        int x = 0;
+        //int x = 0;
 
         do {
                 printf("? ");
                 line = readLine();
+                //    x = line;
                 args = splitLine(line);
                 status = execute(args);
 
-                if(x == EOF) {
-                  printf("^D\n");
-                  exit(0);
-                 }
+                // if(x == EOF) {
+                //   printf("^D\n");
+                //   exit(0);
+                // }
 
                 free(line);
                 free(args);
@@ -269,7 +296,7 @@ void loop(void)
 int main(int argc, char **argv)
 {
         // Load config files, if any.
-
+        rcopen("/SEEshrc");
         // Run command loop.
         loop();
 

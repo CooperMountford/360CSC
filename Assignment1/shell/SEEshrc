@@ -1,2 +1,7 @@
 cd
-cd ..
+pwd
+help
+set test test
+set one
+set
+unset one
