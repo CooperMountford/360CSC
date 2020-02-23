@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <time.h>
+
 // This is an upper limit on the number of tasks we can create.
 #define MAX_TASKS 128
 
@@ -29,14 +31,14 @@ typedef struct task_info {
 //
 // TODO: Add fields here so you can:
 //   a. Keep track of this task's state.
-			//int *state = task_create();
+			int current_state;
 //  		 b. If the task is sleeping, when should it wake up?
-
+			int wake_time;
 //   		c. If the task is waiting for another task, which task is it waiting for?
-
+			int task_blocking;
 //   		d. Was the task blocked waiting for user input? Once you successfully
 //   	   read input, you will need to save it here so it can be returned.
-	//char *readchar = task_readchar();
+			char input_read;
 
 } task_info_t;
 
@@ -59,7 +61,9 @@ int default_wait_time;
  */
 void scheduler_init() {
 		  // TODO: Initialize the state of the scheduler
-		  memset(tasks, 0, sizeof(tasks));
+		  memset(tasks, STATE_NEW, sizeof(tasks));
+		  task_state = 0;
+		  default_wait_time = 10;
 
 }
 
@@ -78,7 +82,18 @@ bool from_main = true;
 	* a generic scheduler that can (and will) be invoked by other blocking functions
 	* as well (task_sleep and task_readchar).
 */
-void scheduler(task_t handle) {
+void scheduler() {
+
+			if(tasks[handle] == NULL && handle != 0)
+
+			if(tasks[handle] == NULL && handle == 0) {
+				// There are no tasks to run
+			}
+
+			task_start(tasks[current_task]);
+			current_task++;
+
+			return;
 
 			if(from_main) {
 						swapcontext(&main_context, &tasks[current_task].context); // Swaps from main context to current task
@@ -92,6 +107,9 @@ void scheduler(task_t handle) {
 
 }
 
+void task_start(void (*functionPTR)()) {
+	functionPTR();
+}
 
 /**
  * This function will execute when a task's function returns. This allows you
@@ -148,8 +166,10 @@ void task_create(task_t* handle, task_fn_t fn) {
  *
  * \param handle  This is the handle produced by task_create
  */
-void task_wait(task_t handle) {
+void task_wait(task_t* handle) {
 		  // TODO: Block this task until the specified task has exited.
+		  tasks[current_task].task_blocking = handle;
+		  scheduler();
 
 		  // HINTNTNTNNTN
 		  // If you are switching to a task that is the same as the current task,
@@ -166,6 +186,12 @@ void task_wait(task_t handle) {
 void task_sleep(size_t ms) {
 		  // TODO: Block this task until the requested time has elapsed.
 		  // Hint: Record the time the task should wake up instead of the time left for it to sleep. The bookkeeping is easier this way.
+		  if (ms > 0) {
+			  tasks[current_task].wake_time = timems()
+			  scheduler();
+		  }
+
+		  return;
 }
 
 /**
