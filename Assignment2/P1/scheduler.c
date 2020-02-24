@@ -59,17 +59,22 @@ int default_wait_time;
  * Initialize the scheduler. Programs should call this before calling any other
  * functiosn in this file.
  */
+
+ucontext_t main_context;
+
 void scheduler_init() {
 		  // TODO: Initialize the state of the scheduler
 		  memset(tasks, STATE_NEW, sizeof(tasks));
 		  task_state = 0;
 		  default_wait_time = 10;
 
+		  getcontext(&main_context);
+		  main_context.uc_stack.ss_sp = malloc(STACK_SIZE);
+		  main_context.uc_stack.ss_size = STACK_SIZE;
+
 }
 
-ucontext_t main_context;
-//main_context.uc_stack.ss_sp = malloc(STACK_SIZE);
-//main_context.uc_stack.ss_size = STACK_SIZE;
+
 
 bool from_main = true;
 
@@ -84,6 +89,7 @@ bool from_main = true;
 */
 void scheduler() {
 
+/*
 			if(tasks[handle] == NULL && handle != 0)
 
 			if(tasks[handle] == NULL && handle == 0) {
@@ -104,11 +110,9 @@ void scheduler() {
 						swapcontext(&main_context, &tasks[current_task].context); // Swaps from current task back to main context
 						//from_main = true;
 			}
+*/
 
-}
 
-void task_start(void (*functionPTR)()) {
-	functionPTR();
 }
 
 /**
@@ -118,6 +122,9 @@ void task_start(void (*functionPTR)()) {
  */
 void task_exit() {
 		  // TODO: Handle the end of a task's execution here
+		  setcontext(&main_context);
+
+		  scheduler();
 }
 
 /**
@@ -158,6 +165,9 @@ void task_create(task_t* handle, task_fn_t fn) {
 
 		  // And finally, set up the context to execute the task function
 		  makecontext(&tasks[index].context, fn, 0);
+
+//Swaps to context for execution then returns to exit_context to call task_exit
+		  swapcontext(&main_context, &tasks[index].context);
 }
 
 /**
@@ -166,9 +176,13 @@ void task_create(task_t* handle, task_fn_t fn) {
  *
  * \param handle  This is the handle produced by task_create
  */
-void task_wait(task_t* handle) {
+void task_wait(task_t handle) {
 		  // TODO: Block this task until the specified task has exited.
+int unsigned long  test = time_ms();
+		  printf("%lu", test);
+
 		  tasks[current_task].task_blocking = handle;
+
 		  scheduler();
 
 		  // HINTNTNTNNTN
@@ -187,7 +201,7 @@ void task_sleep(size_t ms) {
 		  // TODO: Block this task until the requested time has elapsed.
 		  // Hint: Record the time the task should wake up instead of the time left for it to sleep. The bookkeeping is easier this way.
 		  if (ms > 0) {
-			  tasks[current_task].wake_time = timems()
+			  tasks[current_task].wake_time = time_ms();
 			  scheduler();
 		  }
 
