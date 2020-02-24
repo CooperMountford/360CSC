@@ -45,11 +45,12 @@ typedef struct task_info {
 int current_task = 0; //< The handle of the currently-executing task
 int num_tasks = 1;    //< The number of tasks created so far
 
-#define STATE_NEW        0
-#define STATE_READY      1
-#define STATE_WAITING    2
-#define STATE_INACTIVE   3
-#define STATE_TERMINATED 4
+#define STATE_NONE      -1
+#define STATE_NEW        1
+#define STATE_READY      2
+#define STATE_WAITING    3
+#define STATE_INACTIVE   4
+#define STATE_TERMINATED 5
 
 task_info_t tasks[MAX_TASKS]; //< Information for every task
 int task_state; //
@@ -61,22 +62,20 @@ int default_wait_time;
  */
 
 ucontext_t main_context;
+bool from_main;
 
 void scheduler_init() {
 		  // TODO: Initialize the state of the scheduler
-		  memset(tasks, STATE_NEW, sizeof(tasks));
+		  from_main = true;
+
+		  memset(tasks, STATE_NONE, sizeof(tasks));
 		  task_state = 0;
 		  default_wait_time = 10;
 
 		  getcontext(&main_context);
 		  main_context.uc_stack.ss_sp = malloc(STACK_SIZE);
 		  main_context.uc_stack.ss_size = STACK_SIZE;
-
 }
-
-
-
-bool from_main = true;
 
 
 /**
@@ -89,17 +88,17 @@ bool from_main = true;
 */
 void scheduler() {
 
-/*
-			if(tasks[handle] == NULL && handle != 0)
 
-			if(tasks[handle] == NULL && handle == 0) {
-				// There are no tasks to run
+			if(tasks[current_task] == NULL && current_task != 0) //current_task is the end of the created tassk
+						current_task = 1;
+			if(tasks[current_task] == NULL && current_task == 0) { // no tasks to run
+						continue;
 			}
 
-			task_start(tasks[current_task]);
+			task_create(tasks[current_task]);
 			current_task++;
 
-			return;
+
 
 			if(from_main) {
 						swapcontext(&main_context, &tasks[current_task].context); // Swaps from main context to current task
@@ -110,8 +109,8 @@ void scheduler() {
 						swapcontext(&main_context, &tasks[current_task].context); // Swaps from current task back to main context
 						//from_main = true;
 			}
-*/
 
+			return;
 
 }
 
@@ -123,7 +122,8 @@ void scheduler() {
 void task_exit() {
 		  // TODO: Handle the end of a task's execution here
 		  setcontext(&main_context);
-
+		  tasks[current_task].current_state = STATE_TERMINATED;
+		  from_main = true;
 		  scheduler();
 }
 
@@ -168,6 +168,8 @@ void task_create(task_t* handle, task_fn_t fn) {
 
 //Swaps to context for execution then returns to exit_context to call task_exit
 		  swapcontext(&main_context, &tasks[index].context);
+		  from_main = false;
+
 }
 
 /**
@@ -178,11 +180,8 @@ void task_create(task_t* handle, task_fn_t fn) {
  */
 void task_wait(task_t handle) {
 		  // TODO: Block this task until the specified task has exited.
-int unsigned long  test = time_ms();
-		  printf("%lu", test);
-
 		  tasks[current_task].task_blocking = handle;
-
+		  tasks[current_task].current_state = STATE_WAITING;
 		  scheduler();
 
 		  // HINTNTNTNNTN
@@ -201,7 +200,8 @@ void task_sleep(size_t ms) {
 		  // TODO: Block this task until the requested time has elapsed.
 		  // Hint: Record the time the task should wake up instead of the time left for it to sleep. The bookkeeping is easier this way.
 		  if (ms > 0) {
-			  tasks[current_task].wake_time = time_ms();
+			  tasks[current_task].wake_time = (time_ms() + ms);
+			  tasks[current_task].current_state = STATE_WAITING;
 			  scheduler();
 		  }
 
