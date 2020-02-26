@@ -86,33 +86,38 @@ void scheduler_init() {
 	* a generic scheduler that can (and will) be invoked by other blocking functions
 	* as well (task_sleep and task_readchar).
 */
+
+void task_run(int new_task) {
+		  swapcontext(&tasks[current_task].context, &tasks[new_task].context);
+		  from_main = false;
+}
+
 void scheduler() {
 
 
-			if(tasks[current_task] == NULL && current_task != 0) //current_task is the end of the created tassk
+			if(&tasks[current_task] == -1 && current_task != 0) //current_task is the end of the created tassk
 						current_task = 1;
-			if(tasks[current_task] == NULL && current_task == 0) { // no tasks to run
-						continue;
+			if(&tasks[current_task] == -1 && current_task == 0) { // no tasks to run
+
+						// Maybe update current time if nothing is going on
 			}
 
-			task_create(tasks[current_task]);
+			for(int i = 0; i < sizeof(tasks); i++) {
+						//if ()
+			}
+
+			task_run(tasks[current_task]);
 			current_task++;
 
 
 
-			if(from_main) {
-						swapcontext(&main_context, &tasks[current_task].context); // Swaps from main context to current task
 
-						//from_main = false;
-			}
-			else {
-						swapcontext(&main_context, &tasks[current_task].context); // Swaps from current task back to main context
-						//from_main = true;
-			}
 
 			return;
 
 }
+
+
 
 /**
  * This function will execute when a task's function returns. This allows you
@@ -167,8 +172,18 @@ void task_create(task_t* handle, task_fn_t fn) {
 		  makecontext(&tasks[index].context, fn, 0);
 
 //Swaps to context for execution then returns to exit_context to call task_exit
-		  swapcontext(&main_context, &tasks[index].context);
-		  from_main = false;
+		 /* if(from_main) {
+						swapcontext(&main_context, &tasks[current_task].context); // Swaps from main context to current task
+
+						from_main = false;
+			}
+			else {
+						swapcontext(&tasks[current_task].context, &tasks[current_task].context); // Swaps from current task back to main context
+						from_main = true;
+			}
+			*/
+
+		  task_run(index);
 
 }
 
