@@ -1,125 +1,90 @@
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdio.h>
 
-#define N 5
-#define THINKING 2
-#define HUNGRY 1
-#define EATING 0
-#define LEFT (phnum + 4) % N
-#define RIGHT (phnum + 1) % N
+typedef struct {
+  int position;
+  int count;
+  sem_t *forks;
+  sem_t *lock;
+} params_t;
 
-int state[N];
-int phil[N] = { 0, 1, 2, 3, 4 };
+void initialize_semaphores(sem_t *lock, sem_t *forks, int num_forks);
+void run_all_threads(pthread_t *threads, sem_t *forks, sem_t *lock, int num_philosophers);
 
-sem_t mutex;
-sem_t S[N];
+void *philosopher(void *params);
+void think(int position);
+void eat(int position);
 
-void test(int phnum)
+int main(int argc, char *args[])
 {
-    if (state[phnum] == HUNGRY
-        && state[LEFT] != EATING
-        && state[RIGHT] != EATING) {
-        // state that eating
-        state[phnum] = EATING;
+  int num_philosophers = 5;
 
-        sleep(2);
+  sem_t lock;
+  sem_t forks[num_philosophers];
+  pthread_t philosophers[num_philosophers];
 
-        printf("Philosopher %d takes fork %d and %d\n",
-                      phnum + 1, LEFT + 1, phnum + 1);
-
-        printf("Philosopher %d is Eating\n", phnum + 1);
-
-        // sem_post(&S[phnum]) has no effect
-        // during takefork
-        // used to wake up hungry philosophers
-        // during putfork
-        sem_post(&S[phnum]);
-    }
+  initialize_semaphores(&lock, forks, num_philosophers);
+  run_all_threads(philosophers, forks, &lock, num_philosophers);
+  //pthread_exit(NULL);
 }
 
-// take up chopsticks
-void take_fork(int phnum)
+void initialize_semaphores(sem_t *lock, sem_t *forks, int num_forks)
 {
+  int i;
+  for(i = 0; i < num_forks; i++) {
+    sem_init(&forks[i], 0, 1);
+  }
 
-    sem_wait(&mutex);
+  sem_init(lock, 0, num_forks - 1);
+}
 
-    // state that hungry
-    state[phnum] = HUNGRY;
+void run_all_threads(pthread_t *threads, sem_t *forks, sem_t *lock, int num_philosophers)
+{
+  int i;
+  for(i = 0; i < num_philosophers; i++) {
+    params_t *arg = malloc(sizeof(params_t));
+    arg->position = i;
+    arg->count = num_philosophers;
+    arg->lock = lock;
+    arg->forks = forks;
 
-    printf("Philosopher %d is Hungry\n", phnum + 1);
+    pthread_create(&threads[i], NULL, philosopher, (void *)arg);
+  }
 
-    // eat if neighbours are not eating
-    test(phnum);
+  for (int i = 0; i < 5; i++)
+        pthread_join(threads[i], NULL);
+}
 
-    sem_post(&mutex);
+void *philosopher(void *params)
+{
+  int i;
+  params_t self = *(params_t *)params;
 
-    // if unable to eat wait to be signalled
-    sem_wait(&S[phnum]);
+  for(i = 0; i < 3; i++) {
+    think(self.position);
 
+    sem_wait(self.lock);
+    sem_wait(&self.forks[self.position]);
+    sem_wait(&self.forks[(self.position + 1) % self.count]);
     sleep(1);
+    eat(self.position);
+    sem_post(&self.forks[self.position]);
+    sem_post(&self.forks[(self.position + 1) % self.count]);
+    sem_post(self.lock);
+  }
+
+  think(self.position);
+  //pthread_exit(NULL);
 }
 
-// put down chopsticks
-void put_fork(int phnum)
+void think(int position)
 {
-
-    sem_wait(&mutex);
-
-    // state that thinking
-    state[phnum] = THINKING;
-
-    printf("Philosopher %d putting fork %d and %d down\n",
-           phnum + 1, LEFT + 1, phnum + 1);
-    printf("Philosopher %d is thinking\n", phnum + 1);
-
-    test(LEFT);
-    test(RIGHT);
-
-    sem_post(&mutex);
+  printf("Philosopher %d thinking...\n", position);
 }
 
-void* philospher(void* num)
+void eat(int position)
 {
-
-    while (1) {
-
-        int* i = num;
-
-        sleep(1);
-
-        take_fork(*i);
-
-        sleep(0);
-
-        put_fork(*i);
-    }
-}
-
-int main()
-{
-
-    int i;
-    pthread_t thread_id[N];
-
-    // initialize the semaphores
-    sem_init(&mutex, 0, 1);
-
-    for (i = 0; i < N; i++)
-
-        sem_init(&S[i], 0, 0);
-
-    for (i = 0; i < N; i++) {
-
-        // create philosopher processes
-        pthread_create(&thread_id[i], NULL,
-                       philospher, &phil[i]);
-
-        printf("Philosopher %d is thinking\n", i + 1);
-    }
-
-    for (i = 0; i < N; i++)
-
-        pthread_join(thread_id[i], NULL);
+  printf("Philosopher %d eating...\n", position);
 }

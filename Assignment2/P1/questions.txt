@@ -1,4 +1,4 @@
-Do we switch back to main_context after each task or can we go string from one task
+Do we switch back to main_context after each task or can we go straight from one task
    to another? How?
 
 What is sleep_ms() used for? If we use it, all other tasks are blocked so why

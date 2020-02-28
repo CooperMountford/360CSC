@@ -1,24 +1,28 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define N 5 // number of philosophers
 
-struct phil_info {
-   pthread_t phil_id; // id from pthread_create
+typedef struct {
+   //pthread_t phil_id; // id from pthread_create
    int p_num; // our assigned thread number (position at table)
 
-}
+}phil_info;
 
+void* thread_start(void* arg);
 
+sem_t lock;
+sem_t chopsticks[N];
 
-int main(int argc, char* argv[]) {
-   sem_t lock;
-   sem_t chopsticks[N];
+int main() {
+
+   //sem_t chopsticks[N];
    pthread_t philosophers[N];
 
    //init
-   for(int i = 0; i < M; i++) {
+   for(int i = 0; i < N; i++) {
      sem_init(&chopsticks[i], 0, 1);
    }
 
@@ -27,17 +31,12 @@ int main(int argc, char* argv[]) {
    for (int i = 0; i < N; i++) {
       phil_info* arg = malloc(sizeof(phil_info));
       arg -> p_num = i;
-      arg ->
+
+      pthread_create(&philosophers[i], NULL, thread_start, (void*)arg);
    }
 
-
-}
-
-
-void* thread_start(void* arg) {
-   struct phil_info* pinfo = arg;
-
-
+   for (int i = 0; i < N; i++)
+        pthread_join(philosophers[i], NULL);
 
 }
 
@@ -48,6 +47,33 @@ void think(int num) {
 void eat(int num) {
    printf("Philosopher %d is eating\n", num);
 }
+
+void* thread_start(void* arg) {
+  phil_info self = *(phil_info *)arg;
+
+ // for(int i = 1; i < N; i++) {
+ while(1) {
+    think(self.p_num);
+
+    sem_wait(&lock);
+    sem_wait(&chopsticks[self.p_num]);
+    sem_wait(&chopsticks[(self.p_num + 1) % 5]);
+    eat(self.p_num);
+    sem_post(&chopsticks[self.p_num]);
+    sem_post(&chopsticks[(self.p_num + 1) % 5]);
+    sem_post(&lock);
+    //think(self.p_num);
+    pthread_exit(NULL);
+  }
+
+
+ //
+
+
+
+}
+
+
 
 
 
