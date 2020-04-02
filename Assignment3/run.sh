@@ -1,7 +1,11 @@
 #!/bin/bash
 
 set -e
-make
+make all
 
 echo $'running 1st test\n'
-test01
+cd apps
+./test01
+
+cd ..
+make clean
