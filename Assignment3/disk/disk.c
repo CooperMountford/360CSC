@@ -19,7 +19,7 @@ void readBlock(FILE* disk, int block, char* buff) {
 }
 
 void InitLLFS() {
-   printf("TEST2");
+   printf("TEST2\n");
    FILE* disk = fopen(vdisk_path, "w+"); // destroys any existing file
    char* init = calloc(BLOCK_SIZE*NUM_BLOCKS, 1); // init to zeros
    fwrite(init, BLOCK_SIZE*NUM_BLOCKS, 1, disk);
@@ -40,4 +40,5 @@ void InitLLFS() {
    writeBlock(disk, 0, buffer);
    free(buffer);
    fclose(disk);
+   printf("TEST3\n");
 }
