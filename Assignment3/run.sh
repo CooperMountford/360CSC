@@ -1,5 +1,7 @@
 #!/bin/bash
 
+WRONG DIRECTORY
+
 set -e
 make all
 
